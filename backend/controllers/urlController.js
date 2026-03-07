@@ -61,8 +61,12 @@ const redirectUrl = async (req, res, next) => {
     // 302 = temporary redirect (not cached — better for analytics accuracy)
     res.redirect(302, url.original_url);
   } catch (err) {
-    // Render a friendly 404/410 page rather than JSON for browser requests
     if (err.statusCode === 404 || err.statusCode === 410) {
+      // If the request accepts HTML, it might be a React Router navigation 
+      // (like /features), so fall through to the SPA fallback route `app.get('*')`.
+      if (req.accepts('html')) {
+        return next();
+      }
       return res.status(err.statusCode).json({
         success: false,
         error: err.message,

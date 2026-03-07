@@ -15,6 +15,7 @@ const RESERVED_CODES = [
   'api', 'admin', 'login', 'register', 'dashboard',
   'health', 'docs', 'static', 'assets', 'public',
   'www', 'mail', 'ftp', 'smtp', 'imap',
+  'features', 'resources', 'company', 'support', 'legal'
 ];
 
 /**

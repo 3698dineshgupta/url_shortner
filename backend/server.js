@@ -56,11 +56,12 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(requestLogger);
 
 // ============================
-// Root Redirect & Health Check
+// Serve Frontend Static Files
 // ============================
-app.get('/', (req, res) => {
-  res.redirect(301, process.env.FRONTEND_URL || 'http://localhost:3000');
-});
+const frontendPath = path.join(__dirname, '../frontend/dist');
+if (fs.existsSync(frontendPath) || process.env.NODE_ENV === 'production') {
+  app.use(express.static(frontendPath));
+}
 
 // Health Check (no rate limit)
 app.get('/health', (req, res) => {
@@ -85,6 +86,15 @@ app.use('/api/analytics', require('./routes/analyticsRoutes'));
 // Must come AFTER /api routes
 // ============================
 app.get('/:shortCode([a-zA-Z0-9_-]{3,20})', redirectLimiter, redirectUrl);
+
+// ============================
+// SPA Fallback (React Router)
+// ============================
+if (fs.existsSync(frontendPath) || process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  });
+}
 
 // ============================
 // Error Handling
