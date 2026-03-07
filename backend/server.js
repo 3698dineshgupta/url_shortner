@@ -56,8 +56,13 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(requestLogger);
 
 // ============================
-// Health Check (no rate limit)
+// Root Redirect & Health Check
 // ============================
+app.get('/', (req, res) => {
+  res.redirect(301, process.env.FRONTEND_URL || 'http://localhost:3000');
+});
+
+// Health Check (no rate limit)
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
