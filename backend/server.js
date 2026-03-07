@@ -58,10 +58,12 @@ app.use(requestLogger);
 // ============================
 // Serve Frontend Static Files
 // ============================
-const frontendPath = path.join(__dirname, '../frontend/dist');
-if (fs.existsSync(frontendPath) || process.env.NODE_ENV === 'production') {
-  app.use(express.static(frontendPath));
-}
+// In Docker, the path is /app/frontend/dist. Locally, it's ../frontend/dist
+const frontendPath = process.env.NODE_ENV === 'production'
+  ? path.join(__dirname, '../frontend/dist')
+  : path.join(__dirname, '../frontend/dist');
+
+app.use(express.static(frontendPath));
 
 // Health Check (no rate limit)
 app.get('/health', (req, res) => {
@@ -90,11 +92,9 @@ app.get('/:shortCode([a-zA-Z0-9_-]{3,20})', redirectLimiter, redirectUrl);
 // ============================
 // SPA Fallback (React Router)
 // ============================
-if (fs.existsSync(frontendPath) || process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(frontendPath, 'index.html'));
-  });
-}
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(frontendPath, 'index.html'));
+});
 
 // ============================
 // Error Handling
