@@ -1,0 +1,42 @@
+# render.yaml
+# Blueprint for deploying the URL Shortener monorepo to Render
+# It defines two separate Web Services: one for the Node.js API, one for the React/Nginx frontend
+
+services:
+  # ============================
+  # Backend API Service
+  # ============================
+  - type: web
+    name: url-shortener-api
+    env: docker
+    rootDir: backend
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        sync: false # Set this in Render Dashboard (Supabase PostgreSQL URL)
+      - key: REDIS_URL
+        sync: false # Set this in Render Dashboard (Upstash Redis URL)
+      - key: JWT_SECRET
+        generateValue: true
+      - key: BASE_URL
+        value: https://url-shortener-api.onrender.com
+      - key: FRONTEND_URL
+        value: https://url-shortener-app.onrender.com
+
+  # ============================
+  # Frontend React App Service
+  # ============================
+  - type: web
+    name: url-shortener-app
+    env: docker
+    rootDir: frontend
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: VITE_API_URL
+        value: https://url-shortener-api.onrender.com
+      - key: VITE_BASE_URL
+        value: https://url-shortener-app.onrender.com
