@@ -38,7 +38,11 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://url-shortner-r2k9.onrender.com',
+  origin: [
+    process.env.FRONTEND_URL,
+    'https://url-shortner-r2k9.onrender.com',
+    'https://url-shortner-3-ufki.onrender.com'
+  ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
