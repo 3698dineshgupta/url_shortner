@@ -56,12 +56,27 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 // ============================
 app.use(requestLogger);
 
-// ============================
-// Serve Frontend Static Files
-// ============================
-// The frontend dist folder is copied into /app/frontend/dist by the Dockerfile
-// We just resolve it relative to the current directory safely
-const frontendPath = path.join(__dirname, '../frontend/dist');
+// Try to find the frontend dist directory robustly
+// In Docker/Render, it might be in the parent dir, or the current working dir depending on run context
+const possiblePaths = [
+  path.join(__dirname, '../frontend/dist'),
+  path.join(process.cwd(), '../frontend/dist'),
+  path.join(__dirname, 'frontend/dist'),
+  path.join(process.cwd(), 'frontend/dist')
+];
+
+let frontendPath = possiblePaths[0]; // fallback
+for (const p of possiblePaths) {
+  if (fs.existsSync(p)) {
+    frontendPath = p;
+    console.log(`✅ Found frontend dist at: ${frontendPath}`);
+    break;
+  }
+}
+
+if (!fs.existsSync(frontendPath)) {
+  console.warn(`⚠️ Could not locate frontend dist directory! App will return ENOENT for UI routes.`);
+}
 
 app.use(express.static(frontendPath));
 
