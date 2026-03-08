@@ -56,29 +56,34 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 // ============================
 app.use(requestLogger);
 
-// Try to find the frontend dist directory robustly
-// In Docker/Render, it might be in the parent dir, or the current working dir depending on run context
-const possiblePaths = [
-  path.join(__dirname, '../frontend/dist'),
-  path.join(process.cwd(), '../frontend/dist'),
-  path.join(__dirname, 'frontend/dist'),
-  path.join(process.cwd(), 'frontend/dist')
-];
+// ============================
+// Serve Frontend Static Files (Only for local monolithic development)
+// ============================
+// In production on Render, the frontend is deployed as a completely separate Static Site service.
+// The backend should NOT attempt to serve frontend files, as they basically do not exist on the backend instance.
+if (process.env.NODE_ENV !== 'production') {
+  const possiblePaths = [
+    path.join(__dirname, '../frontend/dist'),
+    path.join(process.cwd(), '../frontend/dist'),
+    path.join(__dirname, 'frontend/dist'),
+    path.join(process.cwd(), 'frontend/dist')
+  ];
 
-let frontendPath = possiblePaths[0]; // fallback
-for (const p of possiblePaths) {
-  if (fs.existsSync(p)) {
-    frontendPath = p;
-    console.log(`✅ Found frontend dist at: ${frontendPath}`);
-    break;
+  let frontendPath = possiblePaths[0]; // fallback
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      frontendPath = p;
+      console.log(`✅ Found frontend dist at: ${frontendPath}`);
+      break;
+    }
   }
-}
 
-if (!fs.existsSync(frontendPath)) {
-  console.warn(`⚠️ Could not locate frontend dist directory! App will return ENOENT for UI routes.`);
-}
+  if (!fs.existsSync(frontendPath)) {
+    console.warn(`⚠️ Could not locate frontend dist directory! App will return ENOENT for UI routes.`);
+  }
 
-app.use(express.static(frontendPath));
+  app.use(express.static(frontendPath));
+}
 
 // Health Check (no rate limit)
 app.get('/health', (req, res) => {
@@ -105,11 +110,25 @@ app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.get('/:shortCode([a-zA-Z0-9_-]{3,20})', redirectLimiter, redirectUrl);
 
 // ============================
-// SPA Fallback (React Router)
+// SPA Fallback (React Router) - Only for local development
 // ============================
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(frontendPath, 'index.html'));
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.get('*', (req, res) => {
+    // If not in production, we assume frontendPath might be defined. 
+    // Usually local dev runs frontend on a separate port anyway via Vite.
+    if (typeof frontendPath !== 'undefined') {
+      res.sendFile(path.resolve(frontendPath, 'index.html'));
+    } else {
+      res.status(404).send('Frontend not built locally, run Vite dev server.');
+    }
+  });
+} else {
+  // In production, the backend only serves API and Redirect routes. 
+  // Any other route should return a standard API 404.
+  app.get('*', (req, res) => {
+    res.status(404).json({ success: false, error: 'API Endpoint Not Found' });
+  });
+}
 
 // ============================
 // Error Handling
