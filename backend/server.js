@@ -59,8 +59,11 @@ app.use(requestLogger);
 // ============================
 // Serve Frontend Static Files
 // ============================
-// The frontend dist folder is located at ../frontend/dist
-const frontendPath = path.join(__dirname, '../frontend/dist');
+// In Docker, the frontend dist folder is located at /app/frontend/dist
+// Locally it is at ../frontend/dist
+const frontendPath = process.env.NODE_ENV === 'production'
+  ? '/app/frontend/dist'
+  : path.join(__dirname, '../frontend/dist');
 
 app.use(express.static(frontendPath));
 
