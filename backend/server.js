@@ -26,6 +26,7 @@ if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
 // Initialize App
 // ============================
 const app = express();
+app.set('trust proxy', 1); // Trust reverse proxy for correctly resolving req.protocol and req.ip on Render
 const PORT = parseInt(process.env.PORT) || 5000;
 
 // ============================
@@ -37,7 +38,7 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || 'https://url-shortner-r2k9.onrender.com',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
